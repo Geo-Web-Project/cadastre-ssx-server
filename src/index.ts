@@ -56,10 +56,11 @@ app.post("/storage/delegation", async (req: Request, res: Response) => {
 
   const w3upClient = await w3upClientP;
   const did = UCANDID.parse(req.body.aud);
-  const delegation = await w3upClient.createDelegation(did, [
-    "upload/add",
-    "store/add",
-  ]);
+  const delegation = await w3upClient.createDelegation(
+    did,
+    ["upload/add", "store/add"],
+    { expiration: Math.floor(Date.now() / 1000) + 86400 } // +24 hours
+  );
 
   const { writer, out } = CarWriter.create([delegation.root.cid as any]);
   // @ts-ignore
