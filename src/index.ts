@@ -39,6 +39,7 @@ const ssx = new SSXServer({
       sessionOptions: {
         cookie: {
           sameSite: "none",
+          secure: true,
         },
       },
       store: (session) => {
