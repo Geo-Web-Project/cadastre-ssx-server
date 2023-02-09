@@ -21,6 +21,13 @@ const redisClient = createClient({
 });
 redisClient.connect();
 
+redisClient.on("error", (err) => {
+  console.error("Redis error: ", err);
+});
+redisClient.on("connect", () => {
+  console.log("Redis connected!");
+});
+
 const ssx = new SSXServer({
   signingKey: process.env.SSX_SIGNING_KEY,
   providers: {
