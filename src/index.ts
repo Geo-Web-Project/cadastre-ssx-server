@@ -7,11 +7,19 @@ import { StoreConf } from "@web3-storage/access";
 import * as UCANDID from "@ipld/dag-ucan/did";
 import { CarWriter } from "@ipld/car";
 import { Readable } from "stream";
+import { createClient } from "redis";
+import ConnectRedis from "connect-redis";
 
 dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT || 3001;
+
+const redisClient = createClient({
+  legacyMode: true,
+  url: process.env.REDIS_URL,
+});
+redisClient.connect();
 
 const ssx = new SSXServer({
   signingKey: process.env.SSX_SIGNING_KEY,
@@ -19,6 +27,14 @@ const ssx = new SSXServer({
     metrics: {
       service: "ssx",
       apiKey: process.env.SSX_API_TOKEN ?? "",
+    },
+    sessionConfig: {
+      store: (session) => {
+        const redisStore = ConnectRedis(session);
+        return new redisStore({
+          client: redisClient,
+        });
+      },
     },
   },
 });
