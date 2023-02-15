@@ -15,6 +15,8 @@ dotenv.config();
 const app: Express = express();
 const port = process.env.PORT || 3001;
 
+app.set("trust proxy", process.env.TRUST_PROXY ?? "false");
+
 const redisClient = createClient({
   legacyMode: true,
   url: process.env.REDIS_URL,
