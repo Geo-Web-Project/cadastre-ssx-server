@@ -15,7 +15,7 @@ dotenv.config();
 const app: Express = express();
 const port = process.env.PORT || 3001;
 
-app.set("trust proxy", process.env.TRUST_PROXY ?? "false");
+app.set("trust proxy", process.env.TRUST_PROXY ?? "loopback");
 
 const redisClient = createClient({
   legacyMode: true,
@@ -58,6 +58,9 @@ const ssx = new SSXServer({
 const store = new StoreConf({
   profile: process.env.W3_STORE_NAME ?? "cadastre-ssx-server",
 });
+// Disable config writes
+store.save = async (): Promise<void> => {};
+
 const w3upClientP = create({ store });
 
 app.use(
