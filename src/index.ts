@@ -36,6 +36,11 @@ const ssx = new SSXServer({
       apiKey: process.env.SSX_API_TOKEN ?? "",
     },
     sessionConfig: {
+      sessionOptions: {
+        cookie: {
+          domain: process.env.SESSION_DOMAIN,
+        },
+      },
       store: (session) => {
         const redisStore = ConnectRedis(session);
         return new redisStore({
