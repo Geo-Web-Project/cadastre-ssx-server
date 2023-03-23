@@ -52,14 +52,40 @@ app.use(
 app.use(SSXExpressMiddleware(ssx));
 
 app.post("/storage/delegation", async (req: Request, res: Response) => {
-  if (!req.ssx.verified) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+  if (!req.body) {
+    res.status(422).json({ message: "Expected body." });
+    return;
   }
-
-  if (!req.ssx.userId) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Could not parse userId from session" });
+  if (!req.body.signature) {
+    res
+      .status(422)
+      .json({ message: "Expected the field `signature` in body." });
+    return;
+  }
+  if (!req.body.siwe) {
+    res.status(422).json({ message: "Expected the field `siwe` in the body." });
+    return;
+  }
+  let ssxLoginResponse;
+  try {
+    ssxLoginResponse = await ssx.login(
+      req.body.siwe,
+      req.body.signature,
+      req.body.daoLogin,
+      req.body.resolveEns,
+      req.session.nonce,
+      req.body.resolveLens
+    );
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message });
+  }
+  const { success, error } = ssxLoginResponse;
+  if (!success) {
+    let message = error.type;
+    if (error.expected && error.received) {
+      message += ` Expected: ${error.expected}. Received: ${error.received}`;
+    }
+    return res.status(400).json({ message });
   }
 
   if (!req.body.aud) {
