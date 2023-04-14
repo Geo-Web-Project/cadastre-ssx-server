@@ -5,6 +5,7 @@ import { SSXServer, SSXExpressMiddleware } from "@spruceid/ssx-server";
 import { create } from "@web3-storage/w3up-client";
 import { StoreConf } from "@web3-storage/access";
 import * as UCANDID from "@ipld/dag-ucan/did";
+import * as UCAN from "@ipld/dag-ucan";
 import { CarWriter } from "@ipld/car";
 import { Readable } from "stream";
 
@@ -51,7 +52,7 @@ app.use(
 
 app.use(SSXExpressMiddleware(ssx));
 
-app.post("/storage/delegation", async (req: Request, res: Response) => {
+app.post("/delegations", async (req: Request, res: Response) => {
   if (!req.body) {
     res.status(422).json({ message: "Expected body." });
     return;
@@ -79,7 +80,7 @@ app.post("/storage/delegation", async (req: Request, res: Response) => {
   } catch (error: any) {
     return res.status(500).json({ message: error.message });
   }
-  const { success, error } = ssxLoginResponse;
+  const { success, error, session } = ssxLoginResponse;
   if (!success) {
     let message = error.type;
     if (error.expected && error.received) {
@@ -95,14 +96,34 @@ app.post("/storage/delegation", async (req: Request, res: Response) => {
   }
 
   const w3upClient = await w3upClientP;
-  const did = UCANDID.parse(req.body.aud);
-  const delegation = await w3upClient.createDelegation(
-    did,
+  const didAud = UCANDID.parse(req.body.aud);
+  const didPkh = UCANDID.parse(
+    `did:pkh:eip155:${session.siwe.chainId}:${session.siwe.address}`
+  );
+
+  // Issue UCAN for claim referral
+  const claimReferralDelegation = await UCAN.issue({
+    issuer: w3upClient.agent(),
+    audience: didAud,
+    lifetimeInSeconds: 60 * 60 * 24 * 14,
+    capabilities: [
+      {
+        can: "http/post",
+        with: `https://geoweb.network/claim/${didPkh.did()}`,
+      },
+    ],
+  });
+
+  console.log(UCAN.format(claimReferralDelegation));
+
+  // Issue UCAN for w3up
+  const w3UpDelegation = await w3upClient.createDelegation(
+    didAud,
     ["upload/add", "store/add"],
     { expiration: Math.floor(Date.now() / 1000) + 86400 } // +24 hours
   );
 
-  const { writer, out } = CarWriter.create([delegation.root.cid as any]);
+  const { writer, out } = CarWriter.create([w3UpDelegation.root.cid as any]);
   // @ts-ignore
   for (const block of delegation.export()) {
     writer.put(block);
