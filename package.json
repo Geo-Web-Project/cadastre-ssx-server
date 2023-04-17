@@ -25,7 +25,8 @@
     "@web3-storage/w3up-client": "^4.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",
-    "express": "^4.18.1"
+    "express": "^4.18.1",
+    "multiformats": "^11.0.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.12",
