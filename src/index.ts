@@ -70,7 +70,7 @@ app.post("/delegations/storage", async (req: Request, res: Response) => {
 
   const { writer, out } = CarWriter.create([w3UpDelegation.root.cid as any]);
   // @ts-ignore
-  for (const block of delegation.export()) {
+  for (const block of w3UpDelegation.export()) {
     writer.put(block);
   }
 
