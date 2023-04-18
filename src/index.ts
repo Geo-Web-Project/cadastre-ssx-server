@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import { SiweMessage } from "siwe";
+import { SiweMessage, Cacao } from "@didtools/cacao";
 import { create } from "@web3-storage/w3up-client";
 import { StoreConf } from "@web3-storage/access";
 import * as UCANDID from "@ipld/dag-ucan/did";
@@ -10,6 +10,7 @@ import { CarWriter } from "@ipld/car";
 import { Readable } from "stream";
 import * as Block from "multiformats/block";
 import { sha256 as hasher } from "multiformats/hashes/sha2";
+import { getEIP191Verifier } from "@didtools/pkh-ethereum";
 
 dotenv.config();
 
@@ -26,6 +27,8 @@ store.save = async (): Promise<void> => {};
 
 const w3upClientP = create({ store });
 
+const verifiers = { ...getEIP191Verifier() };
+
 app.use(
   cors({
     credentials: true,
@@ -41,22 +44,16 @@ app.post("/delegations/storage", async (req: Request, res: Response) => {
     res.status(422).json({ message: "Expected body." });
     return;
   }
-  if (!req.body.signature) {
-    res
-      .status(422)
-      .json({ message: "Expected the field `signature` in body." });
-    return;
-  }
   if (!req.body.siwe) {
     res.status(422).json({ message: "Expected the field `siwe` in the body." });
     return;
   }
 
-  const { siwe, signature } = req.body;
-  const siweMessage = new SiweMessage(siwe);
-
+  let siweMessage;
   try {
-    await siweMessage.verify({ signature: signature });
+    siweMessage = new SiweMessage(req.body.siwe);
+    const cacao = Cacao.fromSiweMessage(siweMessage);
+    await Cacao.verify(cacao, { verifiers });
   } catch (error: any) {
     return res.status(401).json({ message: error.message });
   }
@@ -89,22 +86,16 @@ app.post("/delegations/claim-referral", async (req: Request, res: Response) => {
     res.status(422).json({ message: "Expected body." });
     return;
   }
-  if (!req.body.signature) {
-    res
-      .status(422)
-      .json({ message: "Expected the field `signature` in body." });
-    return;
-  }
   if (!req.body.siwe) {
     res.status(422).json({ message: "Expected the field `siwe` in the body." });
     return;
   }
 
-  const { siwe, signature } = req.body;
-  const siweMessage = new SiweMessage(siwe);
-
+  let siweMessage;
   try {
-    await siweMessage.verify({ signature: signature });
+    siweMessage = new SiweMessage(req.body.siwe);
+    const cacao = Cacao.fromSiweMessage(siweMessage);
+    await Cacao.verify(cacao, { verifiers });
   } catch (error: any) {
     return res.status(401).json({ message: error.message });
   }
