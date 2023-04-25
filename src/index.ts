@@ -16,6 +16,7 @@ dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT || 3001;
+const claimDomain = process.env.CLAIM_DOMAIN;
 
 app.set("trust proxy", process.env.TRUST_PROXY ?? "loopback");
 
@@ -114,7 +115,7 @@ app.post("/delegations/claim-referral", async (req: Request, res: Response) => {
     capabilities: [
       {
         can: "http/post",
-        with: `https://geoweb.network/claim/${didPkh.did()}`,
+        with: `https://${claimDomain}/claim/${didPkh.did()}`,
       },
     ],
   });
